@@ -49,6 +49,7 @@ template <int D> void gaussians(pybind11::module &m) {
         .def("size", py::overload_cast<>(&GaussExp<D>::size, py::const_))
         .def("func", py::overload_cast<int>(&GaussExp<D>::getFunc), "term"_a, py::return_value_policy::reference_internal)
         .def("append", py::overload_cast<const Gaussian<D> &>(&GaussExp<D>::append))
+        .def("append", py::overload_cast<const GaussExp<D> &>(&GaussExp<D>::append))
         .def("periodify", &GaussExp<D>::periodify, "period"_a, "std_dev"_a=4.0)
         .def("differentiate", &GaussExp<D>::differentiate, "dir"_a)
         .def("squaredNorm", &GaussExp<D>::calcSquareNorm)

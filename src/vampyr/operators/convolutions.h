@@ -30,7 +30,7 @@ template <int D> void convolutions(pybind11::module &m) {
              "reach"_a=1)
         .def("__call__", [] (IdentityConvolution<D> &I, FunctionTree<D> *inp) {
                 auto out = std::make_unique<FunctionTree<D>>(inp->getMRA());
-                apply<D>(I.getBuildPrec(), *out, I, *inp);
+                apply<D>(1.0e-4, *out, I, *inp);
                 return out;
             },
             "inp"_a);
@@ -55,7 +55,7 @@ void poisson_operator(pybind11::module &m) {
              "reach"_a=1)
         .def("__call__", [] (PoissonOperator &P, FunctionTree<3> *inp) {
                 auto out = std::make_unique<FunctionTree<3>>(inp->getMRA());
-                apply<3>(P.getBuildPrec(), *out, P, *inp);
+                apply<3>(1.0e-4, *out, P, *inp);
                 out->rescale(1.0/(4.0*mrcpp::pi));
                 return out;
             },
@@ -80,7 +80,7 @@ void helmholtz_operator(pybind11::module &m) {
              "reach"_a=1)
         .def("__call__", [] (HelmholtzOperator &H, FunctionTree<3> *inp) {
                 auto out = std::make_unique<FunctionTree<3>>(inp->getMRA());
-                apply<3>(H.getBuildPrec(), *out, H, *inp);
+                apply<3>(1.0e-4, *out, H, *inp);
                 out->rescale(1.0/(4.0*mrcpp::pi));
                 return out;
             },

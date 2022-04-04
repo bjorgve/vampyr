@@ -2,6 +2,7 @@
 
 #include <pybind11/pybind11.h>
 
+// #include <MRCPP/operators/DerivativeOperator.h>
 #include <MRCPP/operators/ABGVOperator.h>
 #include <MRCPP/operators/PHOperator.h>
 #include <MRCPP/operators/BSOperator.h>
@@ -14,7 +15,7 @@ template <int D> void derivatives(pybind11::module &m) {
     using namespace pybind11::literals;
 
     py::class_<DerivativeOperator<D>>(m, "DerivativeOperator")
-        .def(py::init<const MultiResolutionAnalysis<D> &>(), "mra"_a)
+        // .def(py::init<const MultiResolutionAnalysis<D> &>(), "mra"_a, "root"_a)
         .def("getOrder", &DerivativeOperator<D>::getOrder)
         .def("__call__", [] (DerivativeOperator<D> &oper, FunctionTree<D> *inp, int axis) {
                 auto out = std::make_unique<FunctionTree<D>>(inp->getMRA());

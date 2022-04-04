@@ -224,6 +224,7 @@ template <int D> void trees(pybind11::module &m) {
         .def("setIterator", &TreeIterator<D>::setIterator)
         .def("get", py::overload_cast<>(&TreeIterator<D>::getNode), py::return_value_policy::reference_internal)
         .def("init", &TreeIterator<D>::init)
+        .def("nextParent", &TreeIterator<D>::nextParent)
         .def("next", &TreeIterator<D>::next);
 }
 } // namespace vampyr
