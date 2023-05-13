@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include <pybind11/stl/filesystem.h>
+#include <pybind11/Eigen.h>
 
 #include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/trees/FunctionTree.h>
@@ -263,6 +264,12 @@ template <int D> void trees(pybind11::module &m) {
         .def("isGenNode", &MWNode<D>::isGenNode)
         .def("hasParent", &MWNode<D>::hasParent)
         .def("hasCoefs", &MWNode<D>::hasCoefs)
+        .def("quadrature",
+            [](MWNode<D> &node) {
+                Eigen::MatrixXd pts;
+                node.getPrimitiveQuadPts(pts);
+                return pts;
+            })
         .def("center", &MWNode<D>::getCenter)
         .def("upperBounds", &MWNode<D>::getUpperBounds)
         .def("lowerBounds", &MWNode<D>::getLowerBounds)
