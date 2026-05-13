@@ -8,6 +8,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl/filesystem.h>
 
+#include <MRCPP/utils/CompFunction.h>
 #include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/trees/FunctionTree.h>
 #include <MRCPP/trees/MWNode.h>
@@ -539,5 +540,82 @@ template <int D> void trees(pybind11::module &m) {
     // Complex FunctionNode bindings (all dimensions)
     py::class_<FunctionNode<D, ComplexDouble>, MWNode<D, ComplexDouble>, std::unique_ptr<FunctionNode<D, ComplexDouble>, py::nodelete>>(m, (std::string("FunctionNode") + std::to_string(D) + "D_Complex").c_str())
         .def("integrate", &FunctionNode<D, ComplexDouble>::integrate);
+
+        // ----------------------------------------------------------------------
+    // CompFunction<D>  --  multi-component function wrapper from MRCPP.
+    // Holds either real or complex FunctionTree(s) internally; switch with
+    // .defreal() / .defcomplex().
+    // ----------------------------------------------------------------------
+    auto comp_name = std::string("CompFunction") + std::to_string(D) + "D";
+
+    py::class_<CompFunction<D>>(m, comp_name.c_str())
+        // (G) constructors
+        .def(py::init<MultiResolutionAnalysis<D> &>(), "mra"_a,
+             py::keep_alive<1, 2>())
+        .def(py::init<>())
+        .def(py::init<int>(), "n1"_a)
+        .def(py::init<int, bool>(), "n1"_a, "share"_a)
+
+        // (C) data accessors -- inline in CompFunction.h lines 113-119
+        .def("Ncomp",      &CompFunction<D>::Ncomp)
+        .def("rank",       &CompFunction<D>::rank)
+        .def("conj",       &CompFunction<D>::conj)
+        .def("isreal",     &CompFunction<D>::isreal)
+        .def("iscomplex",  &CompFunction<D>::iscomplex)
+        .def("share",      &CompFunction<D>::share)
+
+        // (C) type-switching
+        .def("defreal",    &CompFunction<D>::defreal)
+        .def("defcomplex", &CompFunction<D>::defcomplex)
+
+        // (C) multiplicative scalar factor
+        .def("getFac", &CompFunction<D>::getFac)
+        .def("setFac", &CompFunction<D>::setFac, "fac"_a)
+
+        // (C) integrals & norms
+        .def("integrate",     &CompFunction<D>::integrate)
+        .def("norm",          &CompFunction<D>::norm)
+        .def("getSquareNorm", &CompFunction<D>::getSquareNorm)
+
+        // (C) allocation
+        .def("alloc",      &CompFunction<D>::alloc,
+             "nalloc"_a = 1, "zero"_a = true)
+        .def("alloc_comp", &CompFunction<D>::alloc_comp, "i"_a = 0)
+
+        // (C) sizes
+        .def("getSizeNodes", &CompFunction<D>::getSizeNodes)
+        .def("getNNodes",    &CompFunction<D>::getNNodes)
+
+        // (C) modifiers
+        .def("rescale", &CompFunction<D>::rescale, "c"_a)
+        .def("crop",    &CompFunction<D>::crop,
+             "prec"_a, "absPrec"_a = true)
+        .def("free",    py::overload_cast<>(&CompFunction<D>::free))
+
+        // (G) public name string
+          // (C) P2.2 -- complex conjugation in place.  CompFunction.h:159 declares
+        //     `void dagger();`.  This flips the sign of the imag parts.
+        .def("dagger", &CompFunction<D>::dagger,
+             "Conjugate the function in place: f -> conj(f).")
+
+        // (C) P2.1 -- access underlying FunctionTrees.  Mirrors the binding
+        //     style of FunctionTree<D, ComplexDouble>::real() in this same file.
+        //     Returns a reference into the CompFunction; lifetime tied to self.
+        .def("real",
+             [](CompFunction<D> &self, int i) -> FunctionTree<D, double> & {
+                 return self.real(i);
+             },
+             py::arg("i") = 0,
+             py::return_value_policy::reference_internal,
+             "Get a reference to the i-th real-valued component tree.")
+
+        .def("complex",
+             [](CompFunction<D> &self, int i) -> FunctionTree<D, ComplexDouble> & {
+                 return self.complex(i);
+             },
+             py::arg("i") = 0,
+             py::return_value_policy::reference_internal,
+             "Get a reference to the i-th complex-valued component tree.")
+        .def_readwrite("name", &CompFunction<D>::name);
 }
 } // namespace vampyr
