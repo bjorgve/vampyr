@@ -2,6 +2,7 @@
 
 #include <complex>
 
+#include <MRCPP/utils/CompFunction.h>
 #include <pybind11/complex.h>
 #include <pybind11/functional.h>
 
@@ -165,5 +166,29 @@ template <int D> void advanced_project(pybind11::module &m) {
         "inp"_a,
         "max_iter"_a = -1,
         "abs_prec"_a = false);
+    // Project lambda onto CompFunction<3>: 3D-only because the MRCPP
+    //  declarations in CompFunction.h are non-templated and 3D-only.
+    //     We bind project_real and project_cplx as separate names because
+    //     overloading "project" causes pybind11 to silently coerce complex
+    //     return values to double through std::function<double(...)>.
+    if constexpr (D == 3) {
+        m.def("project_real",
+              [](CompFunction<3> &out,
+                 std::function<double(const Coord<3> &)> f,
+                 double prec) {
+                  mrcpp::project_real(out, f, prec);
+              },
+              "out"_a, "inp"_a, "prec"_a,
+              "Project a real-valued analytic function onto a CompFunction<3>.");
+
+        m.def("project_cplx",
+              [](CompFunction<3> &out,
+                 std::function<ComplexDouble(const Coord<3> &)> f,
+                 double prec) {
+                  mrcpp::project_cplx(out, f, prec);
+              },
+              "out"_a, "inp"_a, "prec"_a,
+              "Project a complex-valued analytic function onto a CompFunction<3>.");
+    }
 }
 } // namespace vampyr

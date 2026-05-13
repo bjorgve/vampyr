@@ -2,6 +2,9 @@
 
 #include <complex>
 
+#include <MRCPP/utils/CompFunction.h>
+#include <pybind11/complex.h>
+#include <pybind11/stl.h>   
 #include <MRCPP/treebuilders/add.h>
 #include <MRCPP/treebuilders/multiply.h>
 
@@ -44,6 +47,8 @@ template <int D> void arithmetics(pybind11::module &m) {
             return out;
         },
         "inp"_a);
+
+
 
     m.def("dot", [](FunctionTree<D, double> &bra, FunctionTree<D, double> &ket) { return mrcpp::dot<D, double>(bra, ket); }, "bra"_a, "ket"_a);
 
@@ -258,5 +263,52 @@ template <int D> void advanced_arithmetics(pybind11::module &m) {
           "inp"_a,
           "max_iter"_a = -1,
           "abs_prec"_a = false);
+     // ========================================================================
+    // CompFunction free-function bindings 
+    //
+    // MRCPP currently instantiates most CompFunction free functions only for
+    // D=3 (intended for 3D quantum chemistry codes).  We guard accordingly.
+    // ========================================================================
+    if constexpr (D == 3) {
+        // Deep copy
+        m.def("deep_copy",
+              [](CompFunction<D> &out, const CompFunction<D> &inp) {
+                  mrcpp::deep_copy<D>(out, inp);
+              },
+              "out"_a, "inp"_a,
+              "Deep-copy a CompFunction into a (possibly differently-allocated) output. (3D only)");
+
+        // Inner product <bra|ket>
+        m.def("dot",
+              [](CompFunction<D> bra, CompFunction<D> ket) {
+                  return mrcpp::dot<D>(bra, ket);
+              },
+              "bra"_a, "ket"_a,
+              "Compute the L2 inner product <bra|ket> of CompFunctions. Returns complex. (3D only)");
+
+        // Weighted addition: out = a*inp_a + b*inp_b
+        m.def("add",
+              [](CompFunction<D> &out,
+                 ComplexDouble a, CompFunction<D> inp_a,
+                 ComplexDouble b, CompFunction<D> inp_b,
+                 double prec, bool conjugate) {
+                  mrcpp::add<D>(out, a, inp_a, b, inp_b, prec, conjugate);
+              },
+              "out"_a, "a"_a, "inp_a"_a, "b"_a, "inp_b"_a,
+              "prec"_a = -1.0, "conjugate"_a = false,
+              "Compute out = a*inp_a + b*inp_b for CompFunctions. (3D only)");
+
+        // Linear combination: out = sum_i c_i * inp_i
+        m.def("linear_combination",
+              [](CompFunction<D> &out,
+                 const std::vector<ComplexDouble> &c,
+                 std::vector<CompFunction<D>> &inp,
+                 double prec, bool conjugate) {
+                  mrcpp::linear_combination<D>(out, c, inp, prec, conjugate);
+              },
+              "out"_a, "c"_a, "inp"_a,
+              "prec"_a = -1.0, "conjugate"_a = false,
+              "Compute out = sum_i c[i] * inp[i] for a list of CompFunctions. (3D only)");
+    }
 }
 } // namespace vampyr

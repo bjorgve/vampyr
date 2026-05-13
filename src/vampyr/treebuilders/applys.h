@@ -2,6 +2,7 @@
 
 #include <complex>
 
+#include <MRCPP/utils/CompFunction.h>
 #include <pybind11/complex.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -128,6 +129,39 @@ template <int D> void advanced_applys(pybind11::module &m) {
           "oper"_a,
           "inp"_a,
           "dir"_a = -1);
+
+        //  Apply ConvolutionOperator to a CompFunction<D>
+    //     C++ signature has a metric parameter for multi-component math;
+    //     we hide it by always using mrcpp::defaultMetric.
+    m.def("apply",
+          [](double prec,
+             CompFunction<D> &out,
+             ConvolutionOperator<D> &oper,
+             const CompFunction<D> &inp,
+             int max_iter,
+             bool abs_prec) {
+              mrcpp::apply<D>(prec, out, oper, inp,
+                              mrcpp::defaultMetric, max_iter, abs_prec);
+          },
+          "prec"_a,
+          "out"_a,
+          "oper"_a,
+          "inp"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false);
+    // apply DerivativeOperator to a CompFunction<D>.
+    //     Mirrors the existing FunctionTree DerivativeOperator apply at line ~123.
+    if constexpr (D == 3) {
+        m.def("apply",
+              [](CompFunction<D> &out,
+                 DerivativeOperator<D> &oper,
+                 CompFunction<D> &inp,
+                 int dir) {
+                  mrcpp::apply<D>(out, oper, inp, dir, mrcpp::defaultMetric);
+              },
+              "out"_a, "oper"_a, "inp"_a, "dir"_a = -1,
+              "Apply a DerivativeOperator natively to a CompFunction. (3D only)");
+    }
 }
 
 } // namespace vampyr
